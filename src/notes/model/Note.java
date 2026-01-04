@@ -1,10 +1,10 @@
 package notes.model;
 
-import notes.utils.StringUtils;
-import notes.utils.DateUtils;
-import notes.utils.TagValidator;
 import java.util.ArrayList;
 import java.util.List;
+import notes.utils.DateUtils;
+import notes.utils.StringUtils;
+import notes.utils.TagValidator;
 
 public class Note {
     private int id;
@@ -16,7 +16,7 @@ public class Note {
     // Конструктор без тегов
     public Note(int id, String title, String content) {
         this.id = id;
-        setTitle(title); // Используем сеттер с валидацией
+        setTitle(title);
         this.content = content;
         this.createdAt = DateUtils.getCurrentDateTime();
         this.tags = new ArrayList<>();
@@ -25,10 +25,10 @@ public class Note {
     // Конструктор с тегами
     public Note(int id, String title, String content, List<String> tags) {
         this.id = id;
-        setTitle(title); // Используем сеттер с валидацией
+        setTitle(title);
         this.content = content;
         this.createdAt = DateUtils.getCurrentDateTime();
-        setTags(tags); // Используем сеттер с валидацией
+        setTags(tags);
     }
     
     // Конструктор с датой (для тестирования)
@@ -36,7 +36,7 @@ public class Note {
         this.id = id;
         setTitle(title);
         this.content = content;
-        setCreatedAt(createdAt); // Валидация даты
+        setCreatedAt(createdAt);
         setTags(tags);
     }
     
@@ -73,7 +73,7 @@ public class Note {
         this.tags = new ArrayList<>();
         if (tags != null) {
             for (String tag : tags) {
-                addTag(tag); // Используем наш метод для добавления с валидацией
+                addTag(tag);
             }
         }
     }
@@ -107,7 +107,13 @@ public class Note {
     
     @Override
     public String toString() {
-        return String.format("Note[id=%d, title='%s', createdAt='%s', tags=%s]", 
+        return String.format("Note{id=%d, title='%s', createdAt='%s', tags=%s}", 
+                id, title, createdAt, tags);
+    }
+    
+    // Новый метод для красивого вывода с отступами
+    public String toFormattedString() {
+        return String.format("    Note{id=%d, title='%s', createdAt='%s', tags=%s}", 
                 id, title, createdAt, tags);
     }
 }

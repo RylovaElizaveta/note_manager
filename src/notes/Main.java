@@ -1,139 +1,171 @@
 package notes;
 
-import notes.model.Note;
-import notes.model.Notebook;
-import notes.utils.StringUtils;
-import notes.utils.TextUtils;
-import notes.utils.DateUtils;
-import notes.utils.TagValidator;
 import java.util.Arrays;
 import java.util.List;
+import notes.model.Note;
+import notes.model.Notebook;
+import notes.service.NoteService;
+import notes.service.NoteStatistics;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("=== Шаг 1: Базовая модель заметок ===\n");
+        System.out.println("=== Шаг 3: Использование коллекций ===\n");
         
-        // 1. Создаем несколько записных книжек
+        // Создаем NoteService
+        NoteService noteService = new NoteService();
+        
+        // Добавляем 2-3 блокнота
         Notebook notebook1 = new Notebook(1, "Java Learning", "Notes about Java programming");
-        Notebook notebook2 = new Notebook(2, "Web Development", "HTML, CSS, JavaScript notes");
+        Notebook notebook2 = new Notebook(2, "Web Development", "Frontend and backend notes");
+        Notebook notebook3 = new Notebook(3, "Algorithms", "Data structures and algorithms notes");
         
-        System.out.println("Notebooks:");
-        System.out.println(notebook1);
-        System.out.println(notebook2);
-        System.out.println();
+        noteService.addNotebook(notebook1);
+        noteService.addNotebook(notebook2);
+        noteService.addNotebook(notebook3);
         
-        // 2. Создаем несколько заметок с разными тегами
-        Note note1 = new Note(1, "OOP Principles", 
-                "Object-Oriented Programming principles: Encapsulation, Inheritance, Polymorphism, Abstraction",
-                Arrays.asList("java", "oop", "theory"));
+        // Добавляем 8-10 заметок с разными датами для демонстрации сортировки
+        noteService.addNote(new Note(1, "OOP Principles", 
+            "Object-Oriented Programming principles: Encapsulation, Inheritance, Polymorphism, Abstraction. " +
+            "This is a detailed note about OOP concepts in Java programming language.",
+            "2025-01-15 10:30", 
+            Arrays.asList("java", "oop", "theory")));
         
-        Note note2 = new Note(2, "Collections Framework", 
-                "Java Collections Framework: List, Set, Map interfaces and their implementations",
-                Arrays.asList("java", "collections", "list"));
+        noteService.addNote(new Note(2, "Collections Framework", 
+            "Java Collections Framework: List, Set, Map interfaces and their implementations. " +
+            "This note covers ArrayList, LinkedList, HashSet, HashMap, TreeMap and other collection classes.",
+            "2025-01-15 11:00", 
+            Arrays.asList("java", "collections")));
         
-        System.out.println("Notes:");
-        System.out.println(note1);
-        System.out.println(note2);
-        System.out.println();
+        noteService.addNote(new Note(3, "String Handling", 
+            "String class, StringBuilder, StringBuffer, and string manipulation techniques. " +
+            "Includes examples of common string operations in Java.",
+            "2025-01-15 12:00", 
+            Arrays.asList("java", "strings", "utils")));
         
-        // 3. Демонстрируем операции с тегами
-        System.out.println("Tag Operations:");
-        System.out.println("Original tags: " + note1.getTags());
+        noteService.addNote(new Note(4, "Exception Handling", 
+            "Checked and unchecked exceptions, try-catch-finally, custom exceptions. " +
+            "Best practices for exception handling in Java applications.",
+            "2025-01-15 13:00", 
+            Arrays.asList("java", "exceptions", "error-handling")));
         
-        note1.addTag("practice");
-        System.out.println("After adding 'practice': " + note1.getTags());
+        noteService.addNote(new Note(5, "HTML Basics", 
+            "HTML tags, attributes, forms, tables, and semantic elements. " +
+            "Introduction to HTML5 features and web page structure.",
+            "2025-01-16 15:45", 
+            Arrays.asList("web", "html", "frontend")));
         
-        note1.removeTag("theory");
-        System.out.println("After removing 'theory': " + note1.getTags());
+        noteService.addNote(new Note(6, "CSS Styling", 
+            "CSS selectors, box model, flexbox, grid, and responsive design. " +
+            "Modern CSS techniques for creating beautiful web interfaces.",
+            "2025-01-16 16:00", 
+            Arrays.asList("web", "css", "design")));
         
-        System.out.println("Has tag 'oop': " + note1.hasTag("oop"));
-        System.out.println("Has tag 'database': " + note1.hasTag("database"));
+        noteService.addNote(new Note(7, "JavaScript Fundamentals", 
+            "Variables, functions, objects, events, and DOM manipulation. " +
+            "Core JavaScript concepts for frontend development.",
+            "2025-01-16 14:00", 
+            Arrays.asList("web", "javascript", "frontend")));
         
-        // ================= ШАГ 2 =================
-        System.out.println("\n=== Шаг 2: Работа со строками ===\n");
+        noteService.addNote(new Note(8, "JavaScript Events", 
+            "Event handling, event listeners, event propagation, and common events. " +
+            "Detailed guide to JavaScript event system and practical examples.",
+            "2025-01-16 14:30", 
+            Arrays.asList("web", "javascript")));
         
-        // 1. Нормализация названий
-        System.out.println("Title Normalization:");
-        String rawTitle = "   my   java note   ";
-        System.out.println("Raw: \"" + rawTitle + "\"");
+        noteService.addNote(new Note(9, "Algorithms Introduction", 
+            "What are algorithms? Complexity analysis (Big O notation). " +
+            "Basic algorithmic concepts and analysis techniques for beginners.",
+            "2025-01-17 09:00", 
+            Arrays.asList("algorithms", "theory", "complexity")));
         
-        try {
-            String normalizedTitle = StringUtils.normalizeTitle(rawTitle);
-            System.out.println("Normalized: \"" + normalizedTitle + "\"");
-            System.out.println("Valid: " + StringUtils.isValidTitle(normalizedTitle));
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        noteService.addNote(new Note(10, "Data Structures", 
+            "Arrays, linked lists, stacks, queues, trees, and graphs. " +
+            "Comprehensive overview of common data structures and their applications.",
+            "2025-01-17 10:00", 
+            Arrays.asList("algorithms", "data-structures")));
+        
+        // Выводим все блокноты
+        System.out.println("All Notebooks:");
+        List<Notebook> allNotebooks = noteService.getAllNotebooks();
+        for (Notebook notebook : allNotebooks) {
+            System.out.println("    " + notebook);
         }
         System.out.println();
         
-        // 2. Обработка тегов
-        System.out.println("Tag Processing:");
-        String rawTags = "java, OOP, PRACTICE, data-structures";
-        System.out.println("Raw tags string: \"" + rawTags + "\"");
-        
-        List<String> parsedTags = StringUtils.parseTags(rawTags);
-        System.out.println("Parsed: " + parsedTags);
-        
-        String joinedTags = StringUtils.joinTags(parsedTags);
-        System.out.println("Joined back: \"" + joinedTags + "\"");
-        System.out.println();
-        
-        // 3. Валидация тегов
-        System.out.println("Tag Validation:");
-        String[] testTags = {"java", "j", "Java@123", "data-structures", "a", "verylongtagnameexceedingtwenty"};
-        for (String tag : testTags) {
-            System.out.printf("\"%s\" is valid: %s%n", tag, TagValidator.isValidTag(tag));
+        // Выводим все заметки
+        System.out.println("All Notes (" + noteService.getTotalNotes() + "):");
+        List<Note> allNotes = noteService.getAllNotes();
+        for (Note note : allNotes) {
+            System.out.println(note.toFormattedString());
         }
         System.out.println();
         
-        // 4. Превью контента
-        System.out.println("Content Preview:");
-        String longContent = "This is a long note about Java programming and OOP concepts including inheritance, polymorphism, and encapsulation.";
-        System.out.println("Original: \"" + longContent + "\"");
-        System.out.println("Preview (20 chars): \"" + TextUtils.truncateContent(longContent, 20) + "\"");
-        System.out.println("Word count: " + TextUtils.countWords(longContent));
-        System.out.println("Search for 'Java': " + (TextUtils.searchInText(longContent, "Java") ? "found" : "not found"));
-        System.out.println("Search for 'Python': " + (TextUtils.searchInText(longContent, "Python") ? "found" : "not found"));
-        System.out.println();
+        // Заметки с тегом 'java'
+        System.out.println("Notes with tag 'java':");
+        List<Note> javaNotes = noteService.searchByTag("java");
+        for (Note note : javaNotes) {
+            System.out.println(note.toFormattedString());
+        }
+        System.out.println("Total: " + javaNotes.size() + " notes\n");
         
-        // 5. Валидация текста
-        System.out.println("Text Validation:");
-        String[] testTexts = {"Hello", "", "A".repeat(5001)};
-        for (String text : testTexts) {
-            System.out.printf("\"%s...\" is valid: %s%n", 
-                text.length() > 10 ? text.substring(0, 10) : text,
-                TextUtils.isValidContent(text));
+        // Заметки, содержащие 'Framework' в названии или тексте
+        System.out.println("Notes containing 'Framework':");
+        List<Note> frameworkNotes = noteService.searchByKeyword("Framework");
+        for (Note note : frameworkNotes) {
+            System.out.println(note.toFormattedString());
         }
         System.out.println();
         
-        // 6. Валидация даты
-        System.out.println("Date Validation:");
-        String[] testDates = {"2025-01-15 10:30", "invalid-date", "2025/01/15 10:30", "2025-13-45 99:99"};
-        for (String date : testDates) {
-            System.out.printf("\"%s\" is valid: %s%n", date, DateUtils.isValidDateTime(date));
+        // Последние 3 заметки
+        System.out.println("Recent notes (last 3):");
+        List<Note> recentNotes = noteService.getRecentNotes(3);
+        for (Note note : recentNotes) {
+            System.out.println(note.toFormattedString());
         }
         System.out.println();
         
-        // 7. Демонстрация обработки ошибок
-        System.out.println("Error Handling Examples:");
+        // Статистика
+        NoteStatistics stats = new NoteStatistics();
+        System.out.println("Statistics:");
+        System.out.println("Total notes: " + stats.getTotalNotes(noteService));
+        System.out.println("Total notebooks: " + stats.getTotalNotebooks(noteService));
         
-        try {
-            Note invalidNote = new Note(3, "ab", "Short title test");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error creating note with short title: " + e.getMessage());
+        String mostUsedTag = stats.getMostUsedTag(noteService);
+        System.out.println("Most used tag: '" + mostUsedTag + "' (" + 
+            stats.countNotesByTag(noteService, mostUsedTag) + " occurrences)");
+        
+        System.out.println("All tags: " + stats.getAllTags(noteService));
+        
+        Note longestNote = stats.getLongestNote(noteService);
+        if (longestNote != null) {
+            System.out.println("Longest note: '" + longestNote.getTitle() + "' (" + 
+                longestNote.getContent().length() + " chars)");
         }
         
-        try {
-            Note noteWithInvalidTag = new Note(4, "Valid Title", "Content");
-            noteWithInvalidTag.addTag("@invalid");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error adding invalid tag: " + e.getMessage());
+        // Демонстрация других методов
+        System.out.println("\nAdditional operations:");
+        
+        // Поиск по тегу 'web'
+        System.out.println("Notes with tag 'web': " + 
+            noteService.searchByTag("web").size() + " notes");
+        
+        // Удаление заметки
+        System.out.println("Removing note with id=4... " + 
+            (noteService.removeNote(4) ? "Success" : "Failed"));
+        System.out.println("Total notes after removal: " + noteService.getTotalNotes());
+        
+        // Поиск по нескольким ключевым словам
+        System.out.println("\nNotes containing 'Java':");
+        List<Note> javaSearch = noteService.searchByKeyword("Java");
+        for (Note note : javaSearch) {
+            System.out.println(note.toFormattedString());
         }
         
-        try {
-            Note noteWithInvalidDate = new Note(5, "Another Note", "Content", "invalid-date", Arrays.asList("test"));
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error creating note with invalid date: " + e.getMessage());
+        // Демонстрация getNote
+        System.out.println("\nGetting note with id=2:");
+        Note note2 = noteService.getNote(2);
+        if (note2 != null) {
+            System.out.println(note2.toFormattedString());
         }
     }
 }
