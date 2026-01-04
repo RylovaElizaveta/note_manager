@@ -1,102 +1,68 @@
 package notes.service;
 
+import java.util.ArrayList;
+import java.util.List;
 import notes.model.Note;
 import notes.model.Notebook;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import notes.repository.Repository;
 
 public class NoteService {
-    private List<Note> notes;
-    private List<Notebook> notebooks;
+    private Repository<Note> notes;
+    private Repository<Notebook> notebooks;
     
     public NoteService() {
-        this.notes = new ArrayList<>();
-        this.notebooks = new ArrayList<>();
+        this.notes = new Repository<>();
+        this.notebooks = new Repository<>();
     }
     
     // Метод для добавления заметки
     public void addNote(Note note) {
         if (note != null) {
-            notes.add(note);
+            notes.add(note.getId(), note);
         }
     }
     
     // Метод для добавления блокнота
     public void addNotebook(Notebook notebook) {
         if (notebook != null) {
-            notebooks.add(notebook);
+            notebooks.add(notebook.getId(), notebook);
         }
     }
     
     // Получить заметку по ID
     public Note getNote(int id) {
-        for (Note note : notes) {
-            if (note.getId() == id) {
-                return note;
-            }
-        }
-        return null;
+        return notes.get(id);
     }
     
     // Получить блокнот по ID
     public Notebook getNotebook(int id) {
-        for (Notebook notebook : notebooks) {
-            if (notebook.getId() == id) {
-                return notebook;
-            }
-        }
-        return null;
+        return notebooks.get(id);
     }
     
     // Получить все заметки
     public List<Note> getAllNotes() {
-        return new ArrayList<>(notes);
+        return notes.getAll();
     }
     
     // Получить все блокноты
     public List<Notebook> getAllNotebooks() {
-        return new ArrayList<>(notebooks);
+        return notebooks.getAll();
     }
     
     // Удалить заметку по ID
     public boolean removeNote(int id) {
-        Note noteToRemove = null;
-        for (Note note : notes) {
-            if (note.getId() == id) {
-                noteToRemove = note;
-                break;
-            }
-        }
-        
-        if (noteToRemove != null) {
-            notes.remove(noteToRemove);
-            return true;
-        }
-        return false;
+        return notes.remove(id);
     }
     
     // Удалить блокнот по ID
     public boolean removeNotebook(int id) {
-        Notebook notebookToRemove = null;
-        for (Notebook notebook : notebooks) {
-            if (notebook.getId() == id) {
-                notebookToRemove = notebook;
-                break;
-            }
-        }
-        
-        if (notebookToRemove != null) {
-            notebooks.remove(notebookToRemove);
-            return true;
-        }
-        return false;
+        return notebooks.remove(id);
     }
     
     // Поиск заметок по тегу
     public List<Note> searchByTag(String tag) {
         List<Note> result = new ArrayList<>();
-        for (Note note : notes) {
+        for (Note note : notes.getAll()) {
             if (note.hasTag(tag)) {
                 result.add(note);
             }
@@ -109,7 +75,7 @@ public class NoteService {
         List<Note> result = new ArrayList<>();
         String lowerKeyword = keyword.toLowerCase();
         
-        for (Note note : notes) {
+        for (Note note : notes.getAll()) {
             if (note.getTitle().toLowerCase().contains(lowerKeyword) ||
                 note.getContent().toLowerCase().contains(lowerKeyword)) {
                 result.add(note);
@@ -120,16 +86,19 @@ public class NoteService {
     
     // Получить последние N заметок (по дате создания)
     public List<Note> getRecentNotes(int count) {
-        List<Note> sortedNotes = new ArrayList<>(notes);
+        List<Note> allNotes = notes.getAll();
+        List<Note> result = new ArrayList<>();
+        
+        if (allNotes.isEmpty()) {
+            return result;
+        }
         
         // Сортируем по дате создания (новые сначала)
-        sortedNotes.sort((n1, n2) -> n2.getCreatedAt().compareTo(n1.getCreatedAt()));
+        allNotes.sort((n1, n2) -> n2.getCreatedAt().compareTo(n1.getCreatedAt()));
         
         // Возвращаем первые count заметок
-        if (sortedNotes.size() <= count) {
-            return sortedNotes;
-        }
-        return sortedNotes.subList(0, count);
+        int endIndex = Math.min(count, allNotes.size());
+        return allNotes.subList(0, endIndex);
     }
     
     // Общее количество заметок
@@ -140,5 +109,15 @@ public class NoteService {
     // Общее количество блокнотов
     public int getTotalNotebooks() {
         return notebooks.size();
+    }
+    
+    // Получить репозиторий заметок (для NoteFileManager)
+    public Repository<Note> getNoteRepository() {
+        return notes;
+    }
+    
+    // Получить репозиторий блокнотов (для NoteFileManager)
+    public Repository<Notebook> getNotebookRepository() {
+        return notebooks;
     }
 }

@@ -1,12 +1,12 @@
 package notes.service;
 
-import notes.model.Note;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import notes.model.Note;
 
 public class NoteStatistics {
     
@@ -41,6 +41,19 @@ public class NoteStatistics {
         }
         
         return mostUsedTag;
+    }
+    
+    // Получить количество вхождений тега
+    public int getTagOccurrences(NoteService service, String tag) {
+        Map<String, Integer> tagCount = new HashMap<>();
+        
+        for (Note note : service.getAllNotes()) {
+            for (String t : note.getTags()) {
+                tagCount.put(t, tagCount.getOrDefault(t, 0) + 1);
+            }
+        }
+        
+        return tagCount.getOrDefault(tag, 0);
     }
     
     // Получить все уникальные теги в системе

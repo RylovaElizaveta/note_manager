@@ -1,7 +1,10 @@
 package notes;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import notes.io.NoteFileManager;
+import notes.logger.NoteLogger;
 import notes.model.Note;
 import notes.model.Notebook;
 import notes.service.NoteService;
@@ -9,163 +12,226 @@ import notes.service.NoteStatistics;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("=== Шаг 3: Использование коллекций ===\n");
+        // Создаем необходимые директории, если их нет
+        java.io.File logsDir = new java.io.File("logs");
+        if (!logsDir.exists()) {
+            logsDir.mkdirs();
+        }
         
-        // Создаем NoteService
-        NoteService noteService = new NoteService();
+        java.io.File dataDir = new java.io.File("data");
+        if (!dataDir.exists()) {
+            dataDir.mkdirs();
+        }
         
-        // Добавляем 2-3 блокнота
-        Notebook notebook1 = new Notebook(1, "Java Learning", "Notes about Java programming");
-        Notebook notebook2 = new Notebook(2, "Web Development", "Frontend and backend notes");
-        Notebook notebook3 = new Notebook(3, "Algorithms", "Data structures and algorithms notes");
+        System.out.println("=== Шаг 4: Дженерики и файловый ввод-вывод ===\n");
         
-        noteService.addNotebook(notebook1);
-        noteService.addNotebook(notebook2);
-        noteService.addNotebook(notebook3);
+        NoteLogger logger = new NoteLogger();
+        String logFile = "logs/notes.log";
         
-        // Добавляем 8-10 заметок с разными датами для демонстрации сортировки
-        noteService.addNote(new Note(1, "OOP Principles", 
-            "Object-Oriented Programming principles: Encapsulation, Inheritance, Polymorphism, Abstraction. " +
-            "This is a detailed note about OOP concepts in Java programming language.",
+        try {
+            // Очищаем лог перед началом
+            logger.clearLog(logFile);
+            
+            // 1. Создаем исходный NoteService с данными
+            System.out.println("=== Original NoteService ===");
+            NoteService originalService = createTestNoteService();
+            
+            // Логируем создание сервиса
+            logger.logInfo(logFile, "NoteService created with initial data");
+            
+            NoteStatistics stats = new NoteStatistics();
+            System.out.println("Total notebooks: " + stats.getTotalNotebooks(originalService));
+            System.out.println("Total notes: " + stats.getTotalNotes(originalService));
+            System.out.println("Most used tag: '" + stats.getMostUsedTag(originalService) + "'\n");
+            
+            // 2. Сохраняем данные в файлы
+            System.out.println("Saving data...");
+            NoteFileManager fileManager = new NoteFileManager();
+            
+            fileManager.saveNotebooks("data/notebooks.txt", originalService.getAllNotebooks());
+            fileManager.saveNotes("data/notes.txt", originalService.getAllNotes());
+            
+            System.out.println("Notebooks saved: " + originalService.getAllNotebooks().size());
+            System.out.println("Notes saved: " + originalService.getAllNotes().size());
+            
+            // Логируем сохранение
+            logger.logInfo(logFile, "Data saved to files");
+            
+            // 3. Создаем новый NoteService и загружаем данные из файлов
+            System.out.println("\nLoading data...");
+            NoteService loadedService = new NoteService();
+            
+            List<Notebook> loadedNotebooks = fileManager.loadNotebooks("data/notebooks.txt");
+            List<Note> loadedNotes = fileManager.loadNotes("data/notes.txt");
+            
+            for (Notebook notebook : loadedNotebooks) {
+                loadedService.addNotebook(notebook);
+            }
+            
+            for (Note note : loadedNotes) {
+                loadedService.addNote(note);
+            }
+            
+            System.out.println("Notebooks loaded: " + loadedService.getAllNotebooks().size());
+            System.out.println("Notes loaded: " + loadedService.getAllNotes().size());
+            
+            // Логируем загрузку
+            logger.logInfo(logFile, "Data loaded from files");
+            
+            // 4. Выводим загруженные данные
+            System.out.println("\n=== Loaded NoteService ===");
+            System.out.println("Loaded Notebooks:");
+            for (Notebook notebook : loadedService.getAllNotebooks()) {
+                System.out.println("    " + notebook);
+            }
+            
+            System.out.println("\nLoaded Notes (first 3):");
+            List<Note> firstThreeNotes = loadedService.getRecentNotes(3);
+            for (Note note : firstThreeNotes) {
+                System.out.println("    " + note);
+            }
+            
+            // 5. Проверяем совпадение данных
+            System.out.println("\n=== Verification ===");
+            boolean verificationPassed = true;
+            
+            // Проверка количества блокнотов
+            int originalNotebookCount = originalService.getTotalNotebooks();
+            int loadedNotebookCount = loadedService.getTotalNotebooks();
+            System.out.println("Original total notebooks: " + originalNotebookCount);
+            System.out.println("Loaded total notebooks: " + loadedNotebookCount);
+            
+            if (originalNotebookCount == loadedNotebookCount) {
+                System.out.println("✓ Notebooks verified");
+            } else {
+                System.out.println("✗ Notebooks verification failed");
+                verificationPassed = false;
+            }
+            
+            // Проверка количества заметок
+            int originalNoteCount = originalService.getTotalNotes();
+            int loadedNoteCount = loadedService.getTotalNotes();
+            System.out.println("\nOriginal total notes: " + originalNoteCount);
+            System.out.println("Loaded total notes: " + loadedNoteCount);
+            
+            if (originalNoteCount == loadedNoteCount) {
+                System.out.println("✓ Notes verified");
+            } else {
+                System.out.println("✗ Notes verification failed");
+                verificationPassed = false;
+            }
+            
+            // Проверка самого популярного тега
+            NoteStatistics loadedStats = new NoteStatistics();
+            String originalMostUsedTag = stats.getMostUsedTag(originalService);
+            String loadedMostUsedTag = loadedStats.getMostUsedTag(loadedService);
+            int originalTagCount = stats.getTagOccurrences(originalService, originalMostUsedTag);
+            int loadedTagCount = loadedStats.getTagOccurrences(loadedService, loadedMostUsedTag);
+            
+            System.out.println("\nOriginal most used tag: '" + originalMostUsedTag + 
+                "' (" + originalTagCount + " occurrences)");
+            System.out.println("Loaded most used tag: '" + loadedMostUsedTag + 
+                "' (" + loadedTagCount + " occurrences)");
+            
+            if (originalMostUsedTag.equals(loadedMostUsedTag) && originalTagCount == loadedTagCount) {
+                System.out.println("✓ Tags verified");
+            } else {
+                System.out.println("✗ Tags verification failed");
+                verificationPassed = false;
+            }
+            
+            // 6. Итог проверки
+            if (verificationPassed) {
+                System.out.println("\n✓ Data verification successful");
+                logger.logInfo(logFile, "Data verification successful");
+            } else {
+                System.out.println("\n✗ Data verification failed");
+                logger.logError(logFile, "Data verification failed");
+            }
+            
+            // 7. Выводим содержимое лог-файла
+            System.out.println("\nLog file contents (" + logFile + "):");
+            String logContent = logger.readLog(logFile);
+            System.out.println(logContent);
+            
+        } catch (IOException e) {
+            System.err.println("Ошибка ввода-вывода: " + e.getMessage());
+            try {
+                logger.logError(logFile, "IO Error: " + e.getMessage());
+            } catch (IOException logError) {
+                System.err.println("Не удалось записать в лог: " + logError.getMessage());
+            }
+        } catch (Exception e) {
+            System.err.println("Неожиданная ошибка: " + e.getMessage());
+            try {
+                logger.logError(logFile, "Unexpected error: " + e.getMessage());
+            } catch (IOException logError) {
+                System.err.println("Не удалось записать в лог: " + logError.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Создает тестовый NoteService с данными
+     */
+    private static NoteService createTestNoteService() {
+        NoteService service = new NoteService();
+        
+        // Добавляем блокноты
+        service.addNotebook(new Notebook(1, "Java Learning", "Notes about Java programming"));
+        service.addNotebook(new Notebook(2, "Web Development", "Frontend and backend notes"));
+        
+        // Добавляем заметки
+        service.addNote(new Note(1, "OOP Principles", 
+            "Object-Oriented Programming principles: Encapsulation, Inheritance, Polymorphism, Abstraction.",
             "2025-01-15 10:30", 
             Arrays.asList("java", "oop", "theory")));
         
-        noteService.addNote(new Note(2, "Collections Framework", 
-            "Java Collections Framework: List, Set, Map interfaces and their implementations. " +
-            "This note covers ArrayList, LinkedList, HashSet, HashMap, TreeMap and other collection classes.",
+        service.addNote(new Note(2, "Collections Framework", 
+            "Java Collections Framework: List, Set, Map interfaces and their implementations.",
             "2025-01-15 11:00", 
             Arrays.asList("java", "collections")));
         
-        noteService.addNote(new Note(3, "String Handling", 
-            "String class, StringBuilder, StringBuffer, and string manipulation techniques. " +
-            "Includes examples of common string operations in Java.",
+        service.addNote(new Note(3, "String Handling", 
+            "String class, StringBuilder, StringBuffer, and string manipulation techniques.",
             "2025-01-15 12:00", 
             Arrays.asList("java", "strings", "utils")));
         
-        noteService.addNote(new Note(4, "Exception Handling", 
-            "Checked and unchecked exceptions, try-catch-finally, custom exceptions. " +
-            "Best practices for exception handling in Java applications.",
+        service.addNote(new Note(4, "Exception Handling", 
+            "Checked and unchecked exceptions, try-catch-finally, custom exceptions.",
             "2025-01-15 13:00", 
-            Arrays.asList("java", "exceptions", "error-handling")));
+            Arrays.asList("java", "exceptions")));
         
-        noteService.addNote(new Note(5, "HTML Basics", 
-            "HTML tags, attributes, forms, tables, and semantic elements. " +
-            "Introduction to HTML5 features and web page structure.",
-            "2025-01-16 15:45", 
+        service.addNote(new Note(5, "HTML Basics", 
+            "HTML tags, attributes, forms, tables, and semantic elements.",
+            "2025-01-16 14:00", 
             Arrays.asList("web", "html", "frontend")));
         
-        noteService.addNote(new Note(6, "CSS Styling", 
-            "CSS selectors, box model, flexbox, grid, and responsive design. " +
-            "Modern CSS techniques for creating beautiful web interfaces.",
-            "2025-01-16 16:00", 
+        service.addNote(new Note(6, "CSS Styling", 
+            "CSS selectors, box model, flexbox, grid, and responsive design.",
+            "2025-01-16 15:00", 
             Arrays.asList("web", "css", "design")));
         
-        noteService.addNote(new Note(7, "JavaScript Fundamentals", 
-            "Variables, functions, objects, events, and DOM manipulation. " +
-            "Core JavaScript concepts for frontend development.",
-            "2025-01-16 14:00", 
-            Arrays.asList("web", "javascript", "frontend")));
-        
-        noteService.addNote(new Note(8, "JavaScript Events", 
-            "Event handling, event listeners, event propagation, and common events. " +
-            "Detailed guide to JavaScript event system and practical examples.",
-            "2025-01-16 14:30", 
+        service.addNote(new Note(7, "JavaScript Fundamentals", 
+            "Variables, functions, objects, events, and DOM manipulation.",
+            "2025-01-16 16:00", 
             Arrays.asList("web", "javascript")));
         
-        noteService.addNote(new Note(9, "Algorithms Introduction", 
-            "What are algorithms? Complexity analysis (Big O notation). " +
-            "Basic algorithmic concepts and analysis techniques for beginners.",
+        service.addNote(new Note(8, "JavaScript Events", 
+            "Event handling, event listeners, event propagation, and common events.",
             "2025-01-17 09:00", 
-            Arrays.asList("algorithms", "theory", "complexity")));
+            Arrays.asList("web", "javascript", "events")));
         
-        noteService.addNote(new Note(10, "Data Structures", 
-            "Arrays, linked lists, stacks, queues, trees, and graphs. " +
-            "Comprehensive overview of common data structures and their applications.",
+        service.addNote(new Note(9, "Algorithms Introduction", 
+            "What are algorithms? Complexity analysis (Big O notation).",
             "2025-01-17 10:00", 
+            Arrays.asList("algorithms", "theory")));
+        
+        service.addNote(new Note(10, "Data Structures", 
+            "Arrays, linked lists, stacks, queues, trees, and graphs.",
+            "2025-01-17 11:00", 
             Arrays.asList("algorithms", "data-structures")));
         
-        // Выводим все блокноты
-        System.out.println("All Notebooks:");
-        List<Notebook> allNotebooks = noteService.getAllNotebooks();
-        for (Notebook notebook : allNotebooks) {
-            System.out.println("    " + notebook);
-        }
-        System.out.println();
-        
-        // Выводим все заметки
-        System.out.println("All Notes (" + noteService.getTotalNotes() + "):");
-        List<Note> allNotes = noteService.getAllNotes();
-        for (Note note : allNotes) {
-            System.out.println(note.toFormattedString());
-        }
-        System.out.println();
-        
-        // Заметки с тегом 'java'
-        System.out.println("Notes with tag 'java':");
-        List<Note> javaNotes = noteService.searchByTag("java");
-        for (Note note : javaNotes) {
-            System.out.println(note.toFormattedString());
-        }
-        System.out.println("Total: " + javaNotes.size() + " notes\n");
-        
-        // Заметки, содержащие 'Framework' в названии или тексте
-        System.out.println("Notes containing 'Framework':");
-        List<Note> frameworkNotes = noteService.searchByKeyword("Framework");
-        for (Note note : frameworkNotes) {
-            System.out.println(note.toFormattedString());
-        }
-        System.out.println();
-        
-        // Последние 3 заметки
-        System.out.println("Recent notes (last 3):");
-        List<Note> recentNotes = noteService.getRecentNotes(3);
-        for (Note note : recentNotes) {
-            System.out.println(note.toFormattedString());
-        }
-        System.out.println();
-        
-        // Статистика
-        NoteStatistics stats = new NoteStatistics();
-        System.out.println("Statistics:");
-        System.out.println("Total notes: " + stats.getTotalNotes(noteService));
-        System.out.println("Total notebooks: " + stats.getTotalNotebooks(noteService));
-        
-        String mostUsedTag = stats.getMostUsedTag(noteService);
-        System.out.println("Most used tag: '" + mostUsedTag + "' (" + 
-            stats.countNotesByTag(noteService, mostUsedTag) + " occurrences)");
-        
-        System.out.println("All tags: " + stats.getAllTags(noteService));
-        
-        Note longestNote = stats.getLongestNote(noteService);
-        if (longestNote != null) {
-            System.out.println("Longest note: '" + longestNote.getTitle() + "' (" + 
-                longestNote.getContent().length() + " chars)");
-        }
-        
-        // Демонстрация других методов
-        System.out.println("\nAdditional operations:");
-        
-        // Поиск по тегу 'web'
-        System.out.println("Notes with tag 'web': " + 
-            noteService.searchByTag("web").size() + " notes");
-        
-        // Удаление заметки
-        System.out.println("Removing note with id=4... " + 
-            (noteService.removeNote(4) ? "Success" : "Failed"));
-        System.out.println("Total notes after removal: " + noteService.getTotalNotes());
-        
-        // Поиск по нескольким ключевым словам
-        System.out.println("\nNotes containing 'Java':");
-        List<Note> javaSearch = noteService.searchByKeyword("Java");
-        for (Note note : javaSearch) {
-            System.out.println(note.toFormattedString());
-        }
-        
-        // Демонстрация getNote
-        System.out.println("\nGetting note with id=2:");
-        Note note2 = noteService.getNote(2);
-        if (note2 != null) {
-            System.out.println(note2.toFormattedString());
-        }
+        return service;
     }
 }
