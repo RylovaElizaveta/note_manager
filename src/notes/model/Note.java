@@ -1,7 +1,8 @@
 package notes.model;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import notes.utils.StringUtils;
+import notes.utils.DateUtils;
+import notes.utils.TagValidator;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,54 +13,55 @@ public class Note {
     private String createdAt;
     private List<String> tags;
     
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-    
+    // Конструктор без тегов
     public Note(int id, String title, String content) {
         this.id = id;
-        this.title = title;
+        setTitle(title); // Используем сеттер с валидацией
         this.content = content;
-        this.createdAt = LocalDateTime.now().format(FORMATTER);
+        this.createdAt = DateUtils.getCurrentDateTime();
         this.tags = new ArrayList<>();
     }
     
+    // Конструктор с тегами
     public Note(int id, String title, String content, List<String> tags) {
         this.id = id;
-        this.title = title;
+        setTitle(title); // Используем сеттер с валидацией
         this.content = content;
-        this.createdAt = LocalDateTime.now().format(FORMATTER);
-        this.tags = new ArrayList<>(tags);
+        this.createdAt = DateUtils.getCurrentDateTime();
+        setTags(tags); // Используем сеттер с валидацией
+    }
+    
+    // Конструктор с датой (для тестирования)
+    public Note(int id, String title, String content, String createdAt, List<String> tags) {
+        this.id = id;
+        setTitle(title);
+        this.content = content;
+        setCreatedAt(createdAt); // Валидация даты
+        setTags(tags);
     }
     
     // Геттеры и сеттеры
-    public int getId() {
-        return id;
-    }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
     
-    public void setId(int id) {
-        this.id = id;
-    }
-    
-    public String getTitle() {
-        return title;
-    }
+    public String getTitle() { return title; }
     
     public void setTitle(String title) {
-        this.title = title;
+        if (!StringUtils.isValidTitle(title)) {
+            throw new IllegalArgumentException("Недопустимое название: " + title);
+        }
+        this.title = StringUtils.normalizeTitle(title);
     }
     
-    public String getContent() {
-        return content;
-    }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
     
-    public void setContent(String content) {
-        this.content = content;
-    }
-    
-    public String getCreatedAt() {
-        return createdAt;
-    }
+    public String getCreatedAt() { return createdAt; }
     
     public void setCreatedAt(String createdAt) {
+        if (!DateUtils.isValidDateTime(createdAt)) {
+            throw new IllegalArgumentException("Недопустимый формат даты: " + createdAt);
+        }
         this.createdAt = createdAt;
     }
     
@@ -68,24 +70,39 @@ public class Note {
     }
     
     public void setTags(List<String> tags) {
-        this.tags = new ArrayList<>(tags);
+        this.tags = new ArrayList<>();
+        if (tags != null) {
+            for (String tag : tags) {
+                addTag(tag); // Используем наш метод для добавления с валидацией
+            }
+        }
     }
     
     // Метод для добавления тега
     public void addTag(String tag) {
-        if (tag != null && !tag.trim().isEmpty() && !tags.contains(tag)) {
-            tags.add(tag);
+        if (tag == null) return;
+        
+        String normalizedTag = tag.trim().toLowerCase();
+        
+        if (!TagValidator.isValidTag(normalizedTag)) {
+            throw new IllegalArgumentException("Недопустимый тег: " + tag);
+        }
+        
+        if (!tags.contains(normalizedTag)) {
+            tags.add(normalizedTag);
         }
     }
     
     // Метод для удаления тега
     public boolean removeTag(String tag) {
-        return tags.remove(tag);
+        if (tag == null) return false;
+        return tags.remove(tag.trim().toLowerCase());
     }
     
     // Метод для проверки наличия тега
     public boolean hasTag(String tag) {
-        return tags.contains(tag);
+        if (tag == null) return false;
+        return tags.contains(tag.trim().toLowerCase());
     }
     
     @Override
